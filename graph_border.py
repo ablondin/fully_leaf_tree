@@ -79,7 +79,7 @@ class GraphBorder():
         for u in self.graph.neighbor_iterator(v):
             (state,info)=self.vertex_status[u]
             if state=="a":
-                self.vertex_status[u]=("b",None)
+                self.vertex_status[u]=("b",v)
                 self.border_size+=1
             elif state=="s":
                 self.vertex_status[u]=(state,info+1)
@@ -102,6 +102,7 @@ class GraphBorder():
         r"""
         Removes the last inserted vertex v to the subtree.
         """
+        add_to_border=[]
         for u in self.graph.neighbor_iterator(v):
             (state,info)=self.vertex_status[u]
             #Impossible that state is available
@@ -110,13 +111,18 @@ class GraphBorder():
                 self.border_size-=1
             elif state=="s":
                 self.vertex_status[u]=(state,info-1)
+                parent=u
                 if info==2:
                     self.num_leaf+=1
             #At this point the state must be "r"
             elif info==v:
-                self.vertex_status[u]=("b", None)
+                add_to_border.append(u)
+                #The status modification will be done when the parent is known
                 self.num_rejected-=1
                 self.border_size+=1
+        
+        for u in add_to_border:
+            self.vertex_status[u]=("b",parent)
 
         self.subtree_size-=1
         if self.subtree_size>0:
