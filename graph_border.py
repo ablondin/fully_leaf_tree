@@ -75,7 +75,7 @@ class GraphBorder():
         INPUTS:
             v - A vertex of the border or if the subtree is empty any available vertex
         """
-        assert self.vertex_status[v][0]=="b" or ("b",None) not in self.vertex_status.values()
+        assert self.vertex_status[v][0]=="b" or self.border_size==0
         for u in self.graph.neighbor_iterator(v):
             (state,info)=self.vertex_status[u]
             if state=="a":
@@ -127,7 +127,7 @@ class GraphBorder():
 
         self.subtree_size-=1
         if self.subtree_size>0:
-            self.vertex_status[v]=("b", None)
+            self.vertex_status[v]=("b", parent)
             self.border_size+=1
         else: #We remove the last vertex from the subtree
             self.vertex_status[v]=("a",None)
@@ -155,7 +155,11 @@ class GraphBorder():
         if self.subtree_size==0:
             self.vertex_status[v]=("a",None)
         else:
-            self.vertex_status[v]=("b",None)
+            for u in self.graph.neighbor_iterator(v):
+                if self.vertex_status[u][0]=="s":
+                    parent=u
+                    break
+            self.vertex_status[v]=("b",parent)
             self.border_size+=1
 
     def undo_last_user_action(self):
@@ -186,9 +190,17 @@ class GraphBorder():
         The size of the tree must be bigger than the current tree size.
         """
         assert i>=self.subtree_size, "The size of the tree is not big enough"
-        if self.subtree_size<=i and i<=self.subtree_size+self.border_size:
+        assert i<=self.graph.num_verts(), "The size is too big"
+        num_leaf_extender=0
+        for v in self.vertex_status.keys():
+            (state,info)=self.vertex_status[v]
+            if state=="b" and self.vertex_status[info][1]==1:
+                num_leaf_extender+=1
+        num_leaf_creator=self.border_size-num_leaf_extender
+
+        if i<=self.subtree_size+num_leaf_creator:
             return self.num_leaf+i-self.subtree_size
-        elif i>self.subtree_size+self.border_size:
+        else:
             return self.num_leaf+i-self.subtree_size-1
 
     def plot(self):
