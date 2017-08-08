@@ -32,6 +32,10 @@ class GraphBorder():
         user_intervention_stack: Stack of the subtree vertices in the order of which the user
         explicitly specify the state (by addition or rejection). Last vertex the user acts on
         is on top.
+
+        _nlc: The last number of leaf creator that was compute
+
+        _nlc_valid: True fi nlc is valid wiht the current state, False otherwise
     """
 
     def __init__(self, G):
@@ -46,6 +50,8 @@ class GraphBorder():
         self.subtree_size=0
         self.num_rejected=0
         self.user_intervention_stack=[]
+        self._nlc=0
+        self._nlc_valid=False
         for v in G.vertex_iterator():
             self.vertex_status[v]=("a", None)
 
@@ -98,6 +104,7 @@ class GraphBorder():
         self.num_leaf+=1
         self.subtree_size+=1
         self.user_intervention_stack.append(v)
+        self._nlc_valid=False
 
     def _remove_last_addition(self,v):
         r"""
@@ -132,6 +139,7 @@ class GraphBorder():
         else: #We remove the last vertex from the subtree
             self.vertex_status[v]=("a",None)
         self.num_leaf-=1
+        self._nlc_valid=False
 
     def reject_vertex(self,v):
         r"""
@@ -140,10 +148,13 @@ class GraphBorder():
         his value in vertex_status is set to ("r",v)
         """
         assert self.vertex_status[v][0]=="b" or self.subtree_size==0
-        self.vertex_status[v]=("r",v)
         if self.subtree_size!=0:
             #The element we reject is on the border
             self.border_size-=1
+            parent=self.vertex_status[v][1]
+            if self.vertex_status[parent][1]>1:
+                self._nlc-=1
+        self.vertex_status[v]=("r",v)
         self.num_rejected+=1
         self.user_intervention_stack.append(v)
 
@@ -160,6 +171,8 @@ class GraphBorder():
                     parent=u
                     break
             self.vertex_status[v]=("b",parent)
+            if self.vertex_status[parent][1]>1:
+                self._nlc+=1
             self.border_size+=1
 
     def undo_last_user_action(self):
@@ -201,12 +214,15 @@ class GraphBorder():
         Return the number of elements in the border that has an inner vertex of
         the subtree as parent.
         """
-        num_leaf_creator=0
-        for v in self.vertex_status.keys():
-            (state,info)=self.vertex_status[v]
-            if state=="b" and self.vertex_status[info][1]>1:
-                num_leaf_creator+=1
-        return num_leaf_creator
+        if self._nlc_valid==True:
+            return self._nlc
+        else:
+            num_leaf_creator=0
+            for v in self.vertex_status.keys():
+                (state,info)=self.vertex_status[v]
+                if state=="b" and self.vertex_status[info][1]>1:
+                    num_leaf_creator+=1
+            return num_leaf_creator
 
     def plot(self):
         r"""
