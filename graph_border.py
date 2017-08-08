@@ -222,6 +222,7 @@ class GraphBorder():
                 (state,info)=self.vertex_status[v]
                 if state=="b" and self.vertex_status[info][1]>1:
                     num_leaf_creator+=1
+            self._nlc_valid=True
             return num_leaf_creator
 
     def plot(self):
