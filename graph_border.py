@@ -191,17 +191,22 @@ class GraphBorder():
         """
         assert i>=self.subtree_size, "The size of the tree is not big enough"
         assert i<=self.graph.num_verts(), "The size is too big"
-        num_leaf_extender=0
-        for v in self.vertex_status.keys():
-            (state,info)=self.vertex_status[v]
-            if state=="b" and self.vertex_status[info][1]==1:
-                num_leaf_extender+=1
-        num_leaf_creator=self.border_size-num_leaf_extender
-
-        if i<=self.subtree_size+num_leaf_creator:
+        if i<=self.subtree_size+self._num_leaf_creator():
             return self.num_leaf+i-self.subtree_size
         else:
             return self.num_leaf+i-self.subtree_size-1
+
+    def _num_leaf_creator(self):
+        r"""
+        Return the number of elements in the border that has an inner vertex of
+        the subtree as parent.
+        """
+        num_leaf_creator=0
+        for v in self.vertex_status.keys():
+            (state,info)=self.vertex_status[v]
+            if state=="b" and self.vertex_status[info][1]>1:
+                num_leaf_creator+=1
+        return num_leaf_creator
 
     def plot(self):
         r"""
