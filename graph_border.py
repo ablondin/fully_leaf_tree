@@ -92,6 +92,7 @@ class GraphBorder():
             #If the vertices is already rejected we do nothing
         if self.vertex_status[v][0]=="b": #The vertex extend a current solution
             self.vertex_status[v]=("s",1)
+            self.border_size-=1
         else: #The vertex is the first vertex to be set to "s"
             self.vertex_status[v]=("s",0)
         self.num_leaf+=1
@@ -140,6 +141,9 @@ class GraphBorder():
         """
         assert self.vertex_status[v][0]=="b" or self.subtree_size==0
         self.vertex_status[v]=("r",v)
+        if self.subtree_size!=0:
+            #The element we reject is on the border
+            self.border_size-=1
         self.num_rejected+=1
         self.user_intervention_stack.append(v)
 
@@ -221,3 +225,5 @@ class GraphBorder():
 
         return self.graph.plot(vertex_colors=vertex_color, edge_colors={"green": tree_edge})
 
+    def __repr__(self):
+        return "subtree_size: %s, num_leaf: %s, border_size: %s, num_rejected: %s," %(self.subtree_size,self.num_leaf, self.border_size, self.num_rejected)
