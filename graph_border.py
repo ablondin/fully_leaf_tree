@@ -110,7 +110,6 @@ class GraphBorder():
         r"""
         Removes the last inserted vertex v to the subtree.
         """
-        add_to_border=[]
         for u in self.graph.neighbor_iterator(v):
             (state,info)=self.vertex_status[u]
             #Impossible that state is available
