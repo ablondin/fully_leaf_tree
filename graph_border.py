@@ -98,7 +98,6 @@ class GraphBorder():
             parent=self.vertex_status[v][1]
             self.vertex_status[v]=("s",1)
             self.border_size-=1
-            print "add: %s" %v
             self._update_nlc(parent,True)
         else: #The vertex is the first vertex to be set to "s"
             self.vertex_status[v]=("s",0)
@@ -133,7 +132,6 @@ class GraphBorder():
 
         self.subtree_size-=1
         if self.subtree_size>0: #The subtree is not empty
-            print "remove :%s" %v
             self._update_nlc(parent_v,False)
             self.vertex_status[v]=("b", parent_v)
             self.border_size+=1
@@ -217,15 +215,12 @@ class GraphBorder():
             v - vertex of which the number of leaf change
             add_leaf - True if a leaf where added to v, False if a leaf where remove to v
         """
-        print self.vertex_status
-        print (v, self.vertex_status[v])
         assert self.vertex_status[v][0]=="s", "The vertex considered is not in the solution"
         degree_v=self.vertex_status[v][1]
         if (degree_v==1 and not add_leaf) or (degree_v==2 and add_leaf):
             #The vertex v either became a leaf or became an innner vertex
             border_v=(u for u in self.graph.neighbor_iterator(v) if self.vertex_status[u][0]=="b")
             border_v_size=sum(1 for _ in border_v)
-            print (v, border_v_size)
             if add_leaf: #v just became an inner vertex
                 self.num_leaf_creator+=border_v_size
             else: #v just became a leaf
