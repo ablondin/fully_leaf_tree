@@ -110,7 +110,6 @@ class GraphBorder():
         r"""
         Removes the last inserted vertex v to the subtree.
         """
-        add_to_border=[]
         for u in self.graph.neighbor_iterator(v):
             (state,info)=self.vertex_status[u]
             #Impossible that state is available
@@ -135,7 +134,7 @@ class GraphBorder():
         self.subtree_size-=1
         if self.subtree_size>0: #The subtree is not empty
             print "remove :%s" %v
-            self._update_nlc(parent,False)
+            self._update_nlc(parent_v,False)
             self.vertex_status[v]=("b", parent_v)
             self.border_size+=1
         else: #We remove the last vertex from the subtree
@@ -220,7 +219,7 @@ class GraphBorder():
         """
         print self.vertex_status
         print (v, self.vertex_status[v])
-        assert self.vertex_status[v][0]=="s"
+        assert self.vertex_status[v][0]=="s", "The vertex considered is not in the solution"
         degree_v=self.vertex_status[v][1]
         if (degree_v==1 and not add_leaf) or (degree_v==2 and add_leaf):
             #The vertex v either became a leaf or became an innner vertex
