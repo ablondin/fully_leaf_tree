@@ -71,6 +71,16 @@ class GraphBorder():
                     return v
         return None
 
+    def vertex_border_size(self,v):
+        r"""
+        For a vertex v, count the number of border vertices that are connected
+        """
+        size=0
+        for u in self.graph.neighbor_iterator(v):
+            if self.vertex_status[u][0]=="b":
+                size+=1
+        return size
+
     def add_to_subtree(self,v):
         r"""
         Add a vertex of the border to the current solution or initiate a solution
@@ -87,18 +97,24 @@ class GraphBorder():
                 self.border_size+=1
             elif state=="s":
                 self.vertex_status[u]=(state,info+1)
+                parent=u
                 if info==1:
                     self.num_leaf-=1
             elif state=="b":
                 self.border_size-=1
                 self.num_rejected+=1
                 self.vertex_status[u]=("r",v)
+                if self.vertex_status[info][1]>1: #u was a leaf creator
+                    self.num_leaf_creator-=1
             #If the vertices is already rejected we do nothing
         if self.vertex_status[v][0]=="b": #The vertex extend a current solution
-            parent=self.vertex_status[v][1]
             self.vertex_status[v]=("s",1)
             self.border_size-=1
-            self._update_nlc(parent,True)
+            if self.vertex_status[parent][1]==2:
+                #The addition create a new inner vertex, num_leaf_creator must be update
+                self.num_leaf_creator+=self.vertex_border_size(parent)
+            elif self.vertex_status[parent][1]>2:
+                self.num_leaf_creator-=1
         else: #The vertex is the first vertex to be set to "s"
             self.vertex_status[v]=("s",0)
         self.num_leaf+=1
@@ -127,13 +143,18 @@ class GraphBorder():
                     if self.vertex_status[parent_u][0]=="s" and v!=parent_u:
                         break
                 self.vertex_status[u]=("b",parent_u)
+                if self.vertex_status[parent_u][1]>1:
+                    self.num_leaf_creator+=1
                 self.num_rejected-=1
                 self.border_size+=1
 
         self.subtree_size-=1
         if self.subtree_size>0: #The subtree is not empty
-            self._update_nlc(parent_v,False)
             self.vertex_status[v]=("b", parent_v)
+            if self.vertex_status[parent_v][1]==1:
+                self.num_leaf_creator-=self.vertex_border_size(parent_v)-1
+            elif self.vertex_status[parent_v][1]>1:
+                self.num_leaf_creator+=1
             self.border_size+=1
         else: #We remove the last vertex from the subtree
             self.vertex_status[v]=("a",None)
@@ -206,25 +227,6 @@ class GraphBorder():
             return self.num_leaf+i-self.subtree_size
         else:
             return self.num_leaf+i-self.subtree_size-1
-
-    def _update_nlc(self,v,add_leaf):
-        r"""
-        Update the number of leaf creator when the number of leaf of the vertex v is modified.
-
-        INPUT:
-            v - vertex of which the number of leaf change
-            add_leaf - True if a leaf where added to v, False if a leaf where remove to v
-        """
-        assert self.vertex_status[v][0]=="s", "The vertex considered is not in the solution"
-        degree_v=self.vertex_status[v][1]
-        if (degree_v==1 and not add_leaf) or (degree_v==2 and add_leaf):
-            #The vertex v either became a leaf or became an innner vertex
-            border_v=(u for u in self.graph.neighbor_iterator(v) if self.vertex_status[u][0]=="b")
-            border_v_size=sum(1 for _ in border_v)
-            if add_leaf: #v just became an inner vertex
-                self.num_leaf_creator+=border_v_size
-            else: #v just became a leaf
-                self.num_leaf_creator-=border_v_size
 
     def plot(self):
         r"""
