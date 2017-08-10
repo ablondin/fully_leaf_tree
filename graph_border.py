@@ -125,7 +125,7 @@ class GraphBorder():
             elif info==v:
                 #Loop to find the parent of u
                 for parent_u in self.graph.neighbor_iterator(u):
-                    if self.vertex_status[parent_u][0]=="s":
+                    if self.vertex_status[parent_u][0]=="s" and v!=parent_u:
                         break
                 self.vertex_status[u]=("b",parent_u)
                 self.num_rejected-=1
