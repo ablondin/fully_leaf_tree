@@ -7,8 +7,8 @@ class GraphBorder():
         vertex_status: Dictionnary that store the state of each vertices with options.
         The status of a vertex v is of the form:
             - ("s",d) if v is in the subtree with degree d in the subtree;
-            - ("b",p) if v is not in the subtree and is adjacent to exactly one
-              vertex of the subtree which is p;
+            - ("b",None) if v is not in the subtree and is adjacent to exactly one
+              vertex of the subtree;
             - ("r",i) if v rejected of the subtree. If i==v the vertex was voluntary rejected
               from a potential subtree by the users. Otherwise it indicates that the addition
               of the vertex v to the subtree will form a cycle since vertex i was add to
@@ -16,6 +16,11 @@ class GraphBorder():
             - ("a",None) if v can eventually be add to the subtree but his addition will
               created a disconnected subgraph in the actual state (i.e v is not on the border
               of the subtree)
+
+        parent: Dictionnary that store the parent of a leaf or a border element or a
+        leaf in the tree. The parent of a border element is the vertex in the tree it is
+        connected to. The parent of a tree vertex is the tree vertex it was connected to
+        (when a border vertex become a leaf the parent don't change)
 
         graph: The graph used to induced the subtree
 
@@ -43,6 +48,7 @@ class GraphBorder():
         to ("a", None)
         """
         self.vertex_status=dict()
+        self.parent=dict()
         self.graph=G
         self.num_leaf=0
         self.border_size=0
@@ -52,6 +58,7 @@ class GraphBorder():
         self.num_leaf_creator=0
         for v in G.vertex_iterator():
             self.vertex_status[v]=("a", None)
+            self.parent[v]=None
 
     def vertex_to_add(self):
         r"""
@@ -93,7 +100,8 @@ class GraphBorder():
         for u in self.graph.neighbor_iterator(v):
             (state,info)=self.vertex_status[u]
             if state=="a":
-                self.vertex_status[u]=("b",v)
+                self.vertex_status[u]=("b",None)
+                self.parent[u]=v
                 self.border_size+=1
             elif state=="s":
                 self.vertex_status[u]=(state,info+1)
@@ -104,7 +112,7 @@ class GraphBorder():
                 self.border_size-=1
                 self.num_rejected+=1
                 self.vertex_status[u]=("r",v)
-                if self.vertex_status[info][1]>1: #u was a leaf creator
+                if self.vertex_status[self.parent[u]][1]>1: #u was a leaf creator
                     self.num_leaf_creator-=1
             #If the vertices is already rejected we do nothing
         if self.vertex_status[v][0]=="b": #The vertex extend a current solution
@@ -133,24 +141,20 @@ class GraphBorder():
                 self.border_size-=1
             elif state=="s":
                 self.vertex_status[u]=(state,info-1)
-                parent_v=u
                 if info==2:
                     self.num_leaf+=1
             #At this point the state must be "r"
             elif info==v:
-                #Loop to find the parent of u
-                for parent_u in self.graph.neighbor_iterator(u):
-                    if self.vertex_status[parent_u][0]=="s" and v!=parent_u:
-                        break
-                self.vertex_status[u]=("b",parent_u)
-                if self.vertex_status[parent_u][1]>1:
+                self.vertex_status[u]=("b",None)
+                if self.vertex_status[self.parent[u]][1]>1:
                     self.num_leaf_creator+=1
                 self.num_rejected-=1
                 self.border_size+=1
 
         self.subtree_size-=1
         if self.subtree_size>0: #The subtree is not empty
-            self.vertex_status[v]=("b", parent_v)
+            parent_v=self.parent[v]
+            self.vertex_status[v]=("b",None)
             if self.vertex_status[parent_v][1]==1:
                 self.num_leaf_creator-=self.vertex_border_size(parent_v)-1
             elif self.vertex_status[parent_v][1]>1:
@@ -170,8 +174,7 @@ class GraphBorder():
         if self.subtree_size!=0:
             #The element we reject is on the border
             self.border_size-=1
-            parent=self.vertex_status[v][1]
-            if self.vertex_status[parent][1]>1:
+            if self.vertex_status[self.parent[v]][1]>1:
                 self.num_leaf_creator-=1
         self.vertex_status[v]=("r",v)
         self.num_rejected+=1
@@ -185,12 +188,9 @@ class GraphBorder():
         if self.subtree_size==0:
             self.vertex_status[v]=("a",None)
         else:
-            for u in self.graph.neighbor_iterator(v):
-                if self.vertex_status[u][0]=="s":
-                    parent=u
-                    break
-            self.vertex_status[v]=("b",parent)
-            if self.vertex_status[parent][1]>1:
+            parent_v=self.parent[v]
+            self.vertex_status[v]=("b",None)
+            if self.vertex_status[parent_v][1]>1:
                 self.num_leaf_creator+=1
             self.border_size+=1
 
