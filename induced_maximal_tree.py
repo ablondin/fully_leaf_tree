@@ -53,7 +53,8 @@ class InducedSubtreeSolver(object):
         Branchs with including/excluding a vertex of the subtree.
         """
         l = self.B.subtree_num_leaf()
-        promising = self.i >= self.B.subtree_size and \
+        promising = self.i >= self.B.subtree_size and\
+                    self.B.subtree_size + self.n - self.B.num_rejected >= self.i and\
                     self.B.leaf_potential(self.i) > self.best
         next_vertex = self.B.vertex_to_add()
         if next_vertex is None:
