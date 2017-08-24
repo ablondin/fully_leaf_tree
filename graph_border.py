@@ -87,6 +87,7 @@ class GraphBorder():
             v - A vertex of the border or if the subtree is empty any available vertex
         """
         assert self.vertex_status[v][0]=="b" or ("b",None) not in self.vertex_status.values()
+        degree = 0
         for u in self.graph.neighbor_iterator(v):
             (state,info)=self.vertex_status[u]
             if state=="a":
@@ -96,6 +97,7 @@ class GraphBorder():
                 self.vertex_status[u]=(state,info+1)
                 if info==1:
                     self.num_leaf-=1
+                degree = info + 1
             elif state=="b":
                 self.border_size-=1
                 self.num_rejected+=1
@@ -109,6 +111,7 @@ class GraphBorder():
         self.num_leaf+=1
         self.subtree_size+=1
         self.user_intervention_stack.append(v)
+        return degree
 
     def _remove_last_addition(self,v):
         r"""

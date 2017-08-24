@@ -2,7 +2,7 @@ from graph_border import GraphBorder
 
 class InducedSubtreeSolver(object):
 
-    def __init__(self, G, upper_bound_strategy='dist'):
+    def __init__(self, G, upper_bound_strategy='dist', max_degree=None):
         """Compute the maximal number of leaves that can be obtain in a tree
          wich is an induced subgraph of size m of G for each m between 0 and
          |G|.
@@ -34,11 +34,17 @@ class InducedSubtreeSolver(object):
         self.G = G
         self.upper_bound_strategy = upper_bound_strategy
         self.n = G.num_verts()
+        if max_degree is None:
+            max_degree = self.n
+        self.max_degree = max_degree
 
-    def maximal_num_leaf(self, i):
+    def maximal_num_leaf(self, i, include=[]):
         self.i = i
         self.B = GraphBorder(self.G, i, self.upper_bound_strategy)
         self.best = 0
+        for v in include:
+            assert v in self.G
+            self.B.add_to_subtree(v)
         self._treat_state()
         return self.best
 
@@ -61,9 +67,31 @@ class InducedSubtreeSolver(object):
             if self.B.subtree_size == self.i:
                 self.best = max(self.best, l)
         elif promising:
-            self.B.add_to_subtree(next_vertex)
-            self._treat_state()
+            degree = self.B.add_to_subtree(next_vertex)
+            if degree <= self.max_degree:
+                self._treat_state()
             self.B.undo_last_user_action()
             self.B.reject_vertex(next_vertex)
             self._treat_state()
             self.B.undo_last_user_action()
+
+class HypercubeInducedSubtreeSolver(object):
+
+    def __init__(self, dimension):
+        self.dimension = dimension
+
+    def maximal_num_leaf(self, i):
+        best = 0
+        for d in range(self.dimension, 1, -1):
+            solver = InducedSubtreeSolver(graphs.CubeGraph(self.dimension), max_degree=d)
+            include = ['0' * self.dimension]
+            for dd in range(d):
+                include.append('0' * dd + '1' +\
+                               '0' * (self.dimension - dd - 1))
+            print d, include
+            best = max(best, solver.maximal_num_leaf(i, include))
+        return best
+
+    def leaf_function(self):
+        return dict((i, self.maximal_num_leaf(i))\
+                    for i in range(2 ** self.dimension))
