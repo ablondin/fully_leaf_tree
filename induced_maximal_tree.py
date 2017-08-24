@@ -38,13 +38,13 @@ class InducedSubtreeSolver(object):
             max_degree = self.n
         self.max_degree = max_degree
 
-    def maximal_num_leaf(self, i, include=[]):
+    def maximal_num_leaf(self, i, include=[], best=0):
         self.i = i
         self.B = GraphBorder(self.G, i, self.upper_bound_strategy)
-        self.best = 0
+        self.best = best
         for v in include:
-            assert v in self.G
             self.B.add_to_subtree(v)
+        self.best = max(self.best, self.B.subtree_num_leaf())
         self._treat_state()
         return self.best
 
@@ -88,8 +88,8 @@ class HypercubeInducedSubtreeSolver(object):
             for dd in range(d):
                 include.append('0' * dd + '1' +\
                                '0' * (self.dimension - dd - 1))
-            print d, include
-            best = max(best, solver.maximal_num_leaf(i, include))
+            best = max(best, solver.maximal_num_leaf(i, include, best))
+            print best, d, include
         return best
 
     def leaf_function(self):
