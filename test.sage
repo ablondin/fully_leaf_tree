@@ -1,0 +1,7 @@
+load('graph_border.sage')
+G = graphs.CubeGraph(6)
+B = GraphBorder(G, 11, 'dist')
+B.add_to_subtree('000000')
+B.add_to_subtree('100000')
+B.add_to_subtree('010000')
+B.reject_vertex('010100')

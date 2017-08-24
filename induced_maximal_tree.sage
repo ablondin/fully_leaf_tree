@@ -1,4 +1,4 @@
-from graph_border import GraphBorder
+load('graph_border.sage')
 
 class InducedSubtreeSolver(object):
 
@@ -38,12 +38,11 @@ class InducedSubtreeSolver(object):
             max_degree = self.n
         self.max_degree = max_degree
 
-    def maximal_num_leaf(self, i, include=[]):
+    def maximal_num_leaf(self, i, include=[], best=0):
         self.i = i
-        self.B = GraphBorder(self.G, i, self.upper_bound_strategy)
-        self.best = 0
+        self.B = GraphBorder(self.G, self.i, self.upper_bound_strategy)
+        self.best = best
         for v in include:
-            assert v in self.G
             self.B.add_to_subtree(v)
         self._treat_state()
         return self.best
@@ -61,12 +60,11 @@ class InducedSubtreeSolver(object):
         l = self.B.subtree_num_leaf()
         promising = self.i >= self.B.subtree_size and\
                     self.B.subtree_size + self.n - self.B.num_rejected >= self.i and\
-                    self.B.leaf_potential(self.i) > self.best
+                    self.B.leaf_potential() > self.best
         next_vertex = self.B.vertex_to_add()
-        if next_vertex is None:
-            if self.B.subtree_size == self.i:
-                self.best = max(self.best, l)
-        elif promising:
+        if self.B.subtree_size == self.i:
+            self.best = max(self.best, l)
+        elif next_vertex is not None and promising:
             degree = self.B.add_to_subtree(next_vertex)
             if degree <= self.max_degree:
                 self._treat_state()
@@ -83,13 +81,14 @@ class HypercubeInducedSubtreeSolver(object):
     def maximal_num_leaf(self, i):
         best = 0
         for d in range(self.dimension, 1, -1):
-            solver = InducedSubtreeSolver(graphs.CubeGraph(self.dimension), max_degree=d)
+            solver = InducedSubtreeSolver(graphs.CubeGraph(self.dimension),\
+                                          'dist', max_degree=d)
             include = ['0' * self.dimension]
             for dd in range(d):
                 include.append('0' * dd + '1' +\
                                '0' * (self.dimension - dd - 1))
-            print d, include
-            best = max(best, solver.maximal_num_leaf(i, include))
+            best = max(best, solver.maximal_num_leaf(i, include, best))
+            print best, d, include
         return best
 
     def leaf_function(self):
