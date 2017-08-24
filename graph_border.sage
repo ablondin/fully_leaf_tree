@@ -215,14 +215,14 @@ class GraphBorder():
         prev_d = 0
         while queue:
             (u,d) = queue.popleft()
-            if 1 <= prev_d and prev_d < d:
-                vertices.append(layer)
-                layer = []
-            if self.vertex_status[u][0] != 's':
-                layer.append(u)
-            prev_d = d
             if not u in visited:
                 visited.add(u)
+                if 1 <= prev_d and prev_d < d:
+                    vertices.append(layer)
+                    layer = []
+                if self.vertex_status[u][0] != 's':
+                    layer.append(u)
+                prev_d = d
                 for v in self.graph.neighbor_iterator(u):
                     if self.vertex_status[v][0] != 'r' and not v in visited:
                         queue.append((v,d+1))
@@ -239,11 +239,12 @@ class GraphBorder():
             current_leaf += self.i - current_size
         else:
             current_leaf += len(vertices_by_dist[0])
+            current_size += len(vertices_by_dist[0])
             priority_queue = [(-self.degree(u),u) for u in vertices_by_dist[0]]
             current_dist = 1
             if not priority_queue and len(vertices_by_dist) >= 2:
                 priority_queue = [(-self.degree(u),u) for u in vertices_by_dist[1]]
-                current_dist += 1
+                current_dist = 2
             heapq.heapify(priority_queue)
             while priority_queue and current_size < self.i:
                 (d,u) = heapq.heappop(priority_queue)
@@ -253,11 +254,11 @@ class GraphBorder():
                         heapq.heappush(priority_queue, (-self.degree(v),v))
                 current_dist += 1
                 if current_size + d - 1 < self.i:
-                    current_size += d - 1
                     current_leaf += d - 2
-                else:
                     current_size += d - 1
-                    current_leaf += self.i - current_size
+                else:
+                    current_leaf += self.i - current_size - 1
+                    current_size += d - 1
         return current_leaf
 
     def leaf_potential_weak(self):
@@ -272,26 +273,26 @@ class GraphBorder():
         elif self.i>self.subtree_size+self.border_size:
             return self.num_leaf+self.i-self.subtree_size-1
 
-    def leaf_potential(self,i):
+    def leaf_potential(self):
         assert self.i>=self.subtree_size, "The size of the tree is not big enough"
         if self.upper_bound_strategy == 'naive' or self.subtree_size <= 2:
             return self.leaf_potential_weak()
         else:
             return self.leaf_potential_dist()
 
-    def plot(self):
+    def plot(self, show_upper_bound=False):
         r"""
         Plot a graph representation of the graph bordrer with following convention for
         node colors:
             green: The node is in the subtre
             yellow: The vertex is on the border
             red: The vertex is rejected by an other vertex
-            black:The vertex is rejected by the user
+            orange:The vertex is rejected by the user
             blue: If the vertex is available
 
         The vertex of the induced subtree are in green
         """
-        vertex_color={"blue": [], "yellow": [], "black": [], "red": [], "green": []} 
+        vertex_color={"blue": [], "yellow": [], "orange": [], "red": [], "green": []} 
         for v in self.graph.vertex_iterator():
             (state,info)=self.vertex_status[v]
             if state=="a":
@@ -302,7 +303,7 @@ class GraphBorder():
                 vertex_color["green"].append(v)
             else: #state is "r"
                 if info==v:
-                    vertex_color["black"].append(v)
+                    vertex_color["orange"].append(v)
                 else:
                     vertex_color["red"].append(v)
         
@@ -311,7 +312,12 @@ class GraphBorder():
             if self.vertex_status[v][0]=="s"==self.vertex_status[u][0]:
                 tree_edge.append((u,v))
 
-        return self.graph.plot(vertex_colors=vertex_color, edge_colors={"green": tree_edge})
+        graphic = self.graph.plot(vertex_colors=vertex_color, edge_colors={"green": tree_edge}, axes=False)
+        if show_upper_bound:
+            graphic += text('dist = %s, naive = %s' % (self.leaf_potential(),\
+                                                       self.leaf_potential_weak()),\
+                                                       (-1,0))
+        return graphic
 
     def __repr__(self):
         return "subtree_size: %s, num_leaf: %s, border_size: %s, num_rejected: %s," %(self.subtree_size,self.num_leaf, self.border_size, self.num_rejected)

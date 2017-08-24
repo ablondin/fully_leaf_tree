@@ -1,4 +1,4 @@
-from graph_border import GraphBorder
+load('graph_border.sage')
 
 class InducedSubtreeSolver(object):
 
@@ -60,7 +60,7 @@ class InducedSubtreeSolver(object):
         l = self.B.subtree_num_leaf()
         promising = self.i >= self.B.subtree_size and\
                     self.B.subtree_size + self.n - self.B.num_rejected >= self.i and\
-                    self.B.leaf_potential(self.i) > self.best
+                    self.B.leaf_potential() > self.best
         next_vertex = self.B.vertex_to_add()
         if self.B.subtree_size == self.i:
             self.best = max(self.best, l)
@@ -81,7 +81,8 @@ class HypercubeInducedSubtreeSolver(object):
     def maximal_num_leaf(self, i):
         best = 0
         for d in range(self.dimension, 1, -1):
-            solver = InducedSubtreeSolver(graphs.CubeGraph(self.dimension), 'naive', max_degree=d)
+            solver = InducedSubtreeSolver(graphs.CubeGraph(self.dimension),\
+                                          'dist', max_degree=d)
             include = ['0' * self.dimension]
             for dd in range(d):
                 include.append('0' * dd + '1' +\
