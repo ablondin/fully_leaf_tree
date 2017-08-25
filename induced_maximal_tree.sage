@@ -88,7 +88,6 @@ class HypercubeInducedSubtreeSolver(object):
                 include.append('0' * dd + '1' +\
                                '0' * (self.dimension - dd - 1))
             best = max(best, solver.maximal_num_leaf(i, include, best))
-            print best, d, include
         return best
 
     def leaf_function(self):
